@@ -11,13 +11,7 @@ const FORGE_ICON: &[u8] = include_bytes!("../forge.png");
 const QUILT_ICON: &[u8] = include_bytes!("../quilt.png");
 
 fn main() -> anyhow::Result<()> {
-    if cfg!(target_os = "windows") {
-        unsafe {
-            enable_colors();
-        }
-    }
-
-    tracing_subscriber::fmt().init();
+    tracing_subscriber::fmt().with_ansi(false).init();
 
     let args = Args::parse();
 
@@ -28,23 +22,6 @@ fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
-}
-
-#[cfg(target_os = "windows")]
-unsafe fn enable_colors() {
-    use winapi::um::{
-        consoleapi::SetConsoleMode, errhandlingapi::GetLastError, handleapi::INVALID_HANDLE_VALUE,
-        processenv::GetStdHandle, winbase::STD_OUTPUT_HANDLE,
-        wincon::ENABLE_VIRTUAL_TERMINAL_PROCESSING,
-    };
-
-    let handle = GetStdHandle(STD_OUTPUT_HANDLE);
-    if handle == INVALID_HANDLE_VALUE {
-        let _err = GetLastError();
-        return;
-    }
-
-    let _ = SetConsoleMode(handle, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 }
 
 #[derive(Default, clap::Parser)]
