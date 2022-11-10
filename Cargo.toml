@@ -11,6 +11,7 @@ async-trait = "0.1.58"
 base64 = "0.13.1"
 chrono = "0.4.22"
 clap = { version = "4.0.18", features = ["derive"] }
+futures = "0.3.25"
 iced = { version = "0.4.2", default-features = false, features = ["glow", "tokio"] }
 iced_aw = "0.2.0"
 iced_glow = "0.3.0"

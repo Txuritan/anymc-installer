@@ -5,6 +5,7 @@ use std::{
 };
 
 use anyhow::Context;
+use futures::{stream, StreamExt, TryStreamExt};
 use iced::{pick_list, Alignment, Checkbox, Column, Command, Element, Length, PickList, Row, Text};
 use iced_native::command::Action;
 use tokio::fs::File;
@@ -75,7 +76,7 @@ pub struct Arguments {
     pub game: Vec<Option<serde_json::Value>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Library {
     pub name: String,
@@ -184,13 +185,29 @@ async fn install_server(install: Install<Version>) -> anyhow::Result<()> {
         .retain(|lib| !lib.name.starts_with("org.quiltmc:hashed"));
     // End of hack-fix
 
-    let mut library_paths = Vec::new();
-
     let libraries_dir = install.dir.to_path_buf().join("libraries");
-    for lib in &profile.libraries {
-        let path = download_library(&libraries_dir, lib).await?;
-        library_paths.push(path);
-    }
+
+    let client = reqwest::Client::new();
+
+    let library_paths = tokio::spawn({
+        let libraries = profile.libraries.clone();
+
+        async move {
+            let library_paths: anyhow::Result<Vec<PathBuf>> = stream::iter(libraries.into_iter())
+                .map(|lib| {
+                    let client = client.clone();
+                    let libraries_dir = libraries_dir.clone();
+
+                    async move { download_library(client, &libraries_dir, &lib).await }
+                })
+                .buffer_unordered(8)
+                .try_collect()
+                .await;
+
+            library_paths
+        }
+    })
+    .await??;
 
     let jar_path = install.dir.to_path_buf().join("quilt-server-launch.jar");
     create_launch_jar(&jar_path, &profile.launcher_main_class, &library_paths).await?;
@@ -199,7 +216,11 @@ async fn install_server(install: Install<Version>) -> anyhow::Result<()> {
 }
 
 #[tracing::instrument(skip_all, err)]
-async fn download_library(dir: &Path, lib: &Library) -> anyhow::Result<PathBuf> {
+async fn download_library(
+    client: reqwest::Client,
+    dir: &Path,
+    lib: &Library,
+) -> anyhow::Result<PathBuf> {
     fn split_artifact(artifact_notation: &str) -> Option<String> {
         let mut parts = artifact_notation.splitn(3, ':');
 
@@ -240,7 +261,7 @@ async fn download_library(dir: &Path, lib: &Library) -> anyhow::Result<PathBuf> 
 
     tracing::info!(library = ?raw_path, "Downloading library");
 
-    let res = reqwest::get(maven_url).await?;
+    let res = client.get(maven_url).send().await?;
     if !res.status().is_success() {
         anyhow::bail!(
             "Library download returned with status code: {}",
