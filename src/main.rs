@@ -5,10 +5,10 @@ mod utils;
 
 use clap::Parser as _;
 
-const ICON: &[u8] = include_bytes!("../icon.png");
-const FABRIC_ICON: &[u8] = include_bytes!("../fabric.png");
-const FORGE_ICON: &[u8] = include_bytes!("../forge.png");
-const QUILT_ICON: &[u8] = include_bytes!("../quilt.png");
+const ICON: &[u8] = include_bytes!("../assets/icon.png");
+const FABRIC_ICON: &[u8] = include_bytes!("../assets/fabric.png");
+const FORGE_ICON: &[u8] = include_bytes!("../assets/forge.png");
+const QUILT_ICON: &[u8] = include_bytes!("../assets/quilt.png");
 
 fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt().with_ansi(false).init();

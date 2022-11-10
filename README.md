@@ -4,6 +4,8 @@ A single binary that allows you to install either of the 3 major mod loaders for
 
 Based off [quilt-native-installer](https://github.com/QuiltMC/quilt-native-installer), implements code from [fabric-installer](https://github.com/FabricMC/fabric-installer), [forge-installer](https://github.com/MinecraftForge/Installer), and [quilt-installer](https://github.com/QuiltMC/quilt-installer).
 
+![anymc-installer screenshot](assets/screenshot.png)
+
 ## Progress
 
   - Fabric
